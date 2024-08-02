@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Hosting Site</title>
+    <!-- ... (styles remain the same) ... -->
+  </head>
+  <body>
+    <h1>Video Hosting Site</h1>
+
+    <div id="registerForm">
+      <h2>Register</h2>
+      <form id="registerFormElement">
+        <input
+          type="text"
+          id="regUsername"
+          placeholder="Username"
+          required
+          autocomplete="username"
+        />
+        <input
+          type="password"
+          id="regPassword"
+          placeholder="Password"
+          required
+          autocomplete="new-password"
+        />
+        <button type="submit">Register</button>
+      </form>
+    </div>
+
+    <div id="loginForm">
+      <h2>Login</h2>
+      <form id="loginFormElement">
+        <input
+          type="text"
+          id="loginUsername"
+          placeholder="Username"
+          required
+          autocomplete="username"
+        />
+        <input
+          type="password"
+          id="loginPassword"
+          placeholder="Password"
+          required
+          autocomplete="current-password"
+        />
+        <button type="submit">Login</button>
+      </form>
+    </div>
+
+    <div id="videoSection" style="display: none">
+      <h2>Videos</h2>
+      <ul id="videoList"></ul>
+    </div>
+
+    <div id="message"></div>
+
+    <script>
+      const API_URL = "http://localhost:8080"; // Explicitly set the full URL
+      let token = localStorage.getItem("token");
+
+      function showMessage(text, isError = false) {
+        const messageEl = document.getElementById("message");
+        messageEl.textContent = text;
+        messageEl.style.color = isError ? "#d00" : "#0d0";
+      }
+
+      async function makeRequest(url, options) {
+        try {
+          console.log(`Attempting to fetch from: ${url}`);
+          console.log("Fetch options:", options);
+          const response = await fetch(url, options);
+          console.log("Response received:", response);
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(
+              errorData.message || `HTTP error! status: ${response.status}`
+            );
+          }
+          return await response.json();
+        } catch (error) {
+          console.error("Detailed error:", error);
+          showMessage(`Request failed: ${error.message}`, true);
+          throw error;
+        }
+      }
+
+      async function register(event) {
+        event.preventDefault();
+        const username = document.getElementById("regUsername").value;
+        const password = document.getElementById("regPassword").value;
+
+        try {
+          await makeRequest(`${API_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          showMessage("Registration successful. Please log in.");
+        } catch (error) {
+          // Error is already handled in makeRequest
+        }
+      }
+
+      async function login(event) {
+        event.preventDefault();
+        const username = document.getElementById("loginUsername").value;
+        const password = document.getElementById("loginPassword").value;
+
+        try {
+          const data = await makeRequest(`${API_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          token = data.token;
+          localStorage.setItem("token", token);
+          showMessage("Login successful.");
+          fetchVideos();
+        } catch (error) {
+          // Error is already handled in makeRequest
+        }
+      }
+
+      async function fetchVideos() {
+        try {
+          const data = await makeRequest(`${API_URL}/videos`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const videoList = document.getElementById("videoList");
+          videoList.innerHTML = "";
+          data.videos.forEach((video) => {
+            const li = document.createElement("li");
+            li.textContent = video;
+            videoList.appendChild(li);
+          });
+          document.getElementById("videoSection").style.display = "block";
+        } catch (error) {
+          showMessage("Failed to fetch videos. Please log in again.", true);
+        }
+      }
+
+      // Attach event listeners
+      document
+        .getElementById("registerFormElement")
+        .addEventListener("submit", register);
+      document
+        .getElementById("loginFormElement")
+        .addEventListener("submit", login);
+
+      // Check if user is already logged in
+      if (token) {
+        fetchVideos();
+      }
+    </script>
+  </body>
+</html>
