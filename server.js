@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -6,17 +6,20 @@ const bcrypt = require("bcrypt");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const path = require("path");
+const fs = require("fs").promises;
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const SECRET_KEY = process.env.JWT_SECRET_KEY || "your_secret_key";
-const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/video_auth_db";
+const SECRET_KEY = process.env.JWT_SECRET_KEY;
+const MONGODB_URI = process.env.MONGODB_URI;
 const MONGODB_USER = process.env.MONGODB_USER;
 const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD;
+const VIDEOS_DIR = path.join(__dirname, "videos"); // Directory where videos are stored
 
 if (!SECRET_KEY || !MONGODB_URI || !MONGODB_USER || !MONGODB_PASSWORD) {
-  console.error('Missing required environment variables. Please check your .env file.');
+  console.error(
+    "Missing required environment variables. Please check your .env file."
+  );
   process.exit(1);
 }
 
@@ -45,6 +48,10 @@ const UserSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model("User", UserSchema);
+
+app.get("/register.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "register.html"));
+});
 
 app.post("/register", async (req, res) => {
   try {
@@ -97,8 +104,22 @@ function authenticateToken(req, res, next) {
   });
 }
 
-app.get("/videos", authenticateToken, (req, res) => {
-  res.json({ videos: ["video1.mp4", "video2.mp4"] });
+app.get("/videos", authenticateToken, async (req, res) => {
+  try {
+    const files = await fs.readdir(VIDEOS_DIR);
+    const videoFiles = files.filter((file) =>
+      [".mp4", ".webm", ".ogg"].includes(path.extname(file).toLowerCase())
+    );
+    res.json({ videos: videoFiles });
+  } catch (error) {
+    console.error("Error reading video directory:", error);
+    res.status(500).json({ message: "Error fetching videos" });
+  }
+});
+
+app.get("/video/:filename", authenticateToken, (req, res) => {
+  const filePath = path.join(VIDEOS_DIR, req.params.filename);
+  res.sendFile(filePath);
 });
 
 app.get("*", (req, res) => {

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Hosting Site - Register</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1,
+      h2 {
+        text-align: center;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        max-width: 300px;
+        margin: 0 auto;
+      }
+      input,
+      button {
+        margin: 10px 0;
+        padding: 5px;
+      }
+      #message {
+        text-align: center;
+        color: #d00;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Video Hosting Site</h1>
+
+    <div id="registerForm">
+      <h2>Register</h2>
+      <form id="registerFormElement">
+        <input
+          type="text"
+          id="regUsername"
+          placeholder="Username"
+          required
+          autocomplete="username"
+        />
+        <input
+          type="password"
+          id="regPassword"
+          placeholder="Password"
+          required
+          autocomplete="new-password"
+        />
+        <button type="submit">Register</button>
+      </form>
+      <p>Already have an account? <a href="/">Login here</a></p>
+    </div>
+
+    <div id="message"></div>
+
+    <script src="/auth.js"></script>
+  </body>
+</html>
